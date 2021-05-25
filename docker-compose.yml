@@ -1,0 +1,70 @@
+version: "3"
+
+services:
+  dash_server:
+    container_name: dolphin-server
+    restart: always
+    build: ./dolphin_server
+    # user: nobody
+    deploy:
+      resources:
+        limits:
+          memory: "14g"
+    volumes:
+      - "./src:/app"
+      - "./data:/data"
+      - "./notebooks:/notebooks"
+      - "./dolphin_server:/docker_deets"
+    network_mode: dolphin_postgres_network
+    ports:
+      - "8050:8050"
+      - "8920:8920"
+    env_file:
+      - database.env 
+    command: tail -f /dev/null
+
+
+  scraper:
+    container_name: dolphin-scraper
+    restart: always
+    build: ./dolphin_scraper
+    volumes:
+      - "./src:/app"
+      - "./data:/data"
+      - "./notebooks:/notebooks"
+      - "./dolphin_scraper:/docker_deets"
+    network_mode: dolphin_postgres_network
+    ports:
+      - "8921:8921"
+    env_file:
+      - database.env 
+    command: tail -f /dev/null
+
+  # postgres:
+  #   build : postgres
+  #   image : postgres
+  #   container_name: dolphin_postgres
+  #   volumes:
+  #     - "./data/postgres:/var/lib/postgresql/data"
+  #     # - "shared:/shared"
+  #   # networks:
+  #   #     - dolphin_postgres_network
+  #   ports:
+  #     - "5432:5432"
+  #   command: tail -f /dev/null
+
+  postgres:
+    image: "postgres" # use latest official postgres version
+    container_name: dolphin-postgres
+    env_file:
+      - database.env # configure postgres
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data/ # persist data even 
+    networks:
+        - dolphin_postgres_network
+
+
+networks:
+  dolphin_postgres_network:
+    name: dolphin_postgres_network
+      

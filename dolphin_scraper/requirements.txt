@@ -1,0 +1,8 @@
+pandas
+numpy
+rightmove-webscraper
+absl-py
+psycopg2-binary
+jupyter
+nb-black==1.0.7
+SQLAlchemy==1.4.15
