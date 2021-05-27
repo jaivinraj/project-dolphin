@@ -75,12 +75,17 @@ def query_addresses(df, address_col="address"):
 
     Returns
     -------
-    [type]
-        [description]
+    pd.DataFrame
+        Geocoded addresses
     """
     n_target = len(df)
     query_results = []
     logger.info("Querying geolocations...")
+    # if no data, return empty dataframe
+    if n_target == 0:
+        return pd.DataFrame(
+            columns=["id", "search_address", "address", "latitude", "longitude"]
+        )
     for i, row in tqdm(df.iterrows(), total=len(df)):
         address_quer = (
             row[address_col] if "UK" in row[address_col] else row[address_col] + ", UK"
