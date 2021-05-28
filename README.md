@@ -82,4 +82,5 @@ Attached below are screenshots of the user interface in the original version (th
 
 
 ![Map screenshot](figures/app_screenshot1.png)
-![Bubble plots screenshot](figures/app_screenshot2.png)
+![Bubble plots screenshot 1](figures/app_screenshot2.png)
+![Bubble plots screenshot 2](figures/app_screenshot3.png)
