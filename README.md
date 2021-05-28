@@ -25,8 +25,6 @@ docker-compose up -d
 
 NOTE: this repo is a refactored version of a faster (but less robust) initial implementation. Some of the functionality from the old repo has not yet been incorporated.
 
-The processing is currently in notebooks but will be modularised and automated once the notebook implementation has been fully tested.
-
 ## 3. Functionality
 
 <details>
