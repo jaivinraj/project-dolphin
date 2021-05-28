@@ -21,12 +21,12 @@ def load_poi_geo(cat="parks", **kwargs):
 def load_poi_gdfs(**kwargs):
     dfs = {}
     for category in POI_CATEGORIES:
-        if category == "tube":
+        if category == "tubes":
             gdf_tube = load_poi_geo("stations", **kwargs)
             gdf_tube = gdf_tube[
                 gdf_tube["network"].str.contains("London Underground").fillna(False)
             ]
             dfs[category] = gdf_tube
         else:
-            dfs[category] = load_poi_geo(category + "s", **kwargs)
+            dfs[category] = load_poi_geo(category, **kwargs)
     return dfs
