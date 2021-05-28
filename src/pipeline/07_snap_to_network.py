@@ -1,8 +1,7 @@
-#!/usr/bin/env python
-# coding: utf-8
+"""This module snaps properties to the closest node on the walking network."""
 
-# # Snap to the Road Network
-
+from absl import app
+from absl import flags
 
 import logging
 
@@ -10,16 +9,11 @@ import sys
 
 sys.path.append("/app")
 
-# import scraping as sc
 
 import pandas as pd
 
-from jinja2 import Template
 
 from db_utils import get_engine, get_table_creation_query
-
-from gis_utils import get_gdf_coords, get_closest_idxs, get_closest_pois_slow
-
 
 import dataloader as loader
 
@@ -37,9 +31,6 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
-import logging
-from absl import app
-from absl import flags
 
 FLAGS = flags.FLAGS
 
@@ -48,15 +39,10 @@ flags.DEFINE_string("searchname", "tamzin", "Name for search", short_name="s")
 
 # ## Connect to Database
 
-# In[3]:
-
 
 user = os.getenv("POSTGRES_USER")
 password = os.getenv("POSTGRES_PASSWORD")
 host = os.getenv("POSTGRES_HOST")
-
-
-# In[4]:
 
 
 def main(_):
@@ -64,13 +50,9 @@ def main(_):
 
     # ## Define search parameters
 
-    # In[5]:
-
     searchname = FLAGS.searchname
 
     # ## Load data
-
-    # In[6]:
 
     q_addresses = f"""SELECT c.* FROM 
     {searchname}.bng_coords c
@@ -78,28 +60,22 @@ def main(_):
     {searchname}.address_ids_to_process a
     ON c.address_id=a.address_id"""
 
-    # In[7]:
     logger.info("Loading road nodes...")
     with engine.connect() as conn:
         df_nodes = pd.read_sql("SELECT * FROM node_coords", con=conn)
-    # In[8]:
     logger.info("Loading addressses...")
     df_addresses = loader.load_sql(q_addresses, user=user, password=password, host=host)
 
     # ## Snap to network
 
-    # In[9]:
     coords_nodes = df_nodes[["eastings", "northings"]].values
 
-    # In[10]:
     logger.info("Getting closest nodes")
     closest_osmids = get_closest_osmids(
         df_addresses[["eastings", "northings"]].values,
         coords_nodes,
         df_nodes.osmid.values,
     )
-
-    # In[11]:
 
     output = pd.DataFrame(
         {
@@ -108,28 +84,21 @@ def main(_):
         }
     )
 
-    # In[12]:
+    # cols = {
+    #     "address_id": "INTEGER",
+    #     "osmid": "BIGINT",
+    # }
 
-    cols = {
-        "address_id": "INTEGER",
-        "osmid": "BIGINT",
-    }
+    # index_cols = ["address_id", "osmid"]
+    # unique_cols = ["address_id"]
 
-    index_cols = ["address_id", "osmid"]
-    unique_cols = ["address_id"]
+    # create_q = get_table_creation_query(
+    #     "address_nodes", cols, searchname, index_cols, unique_cols
+    # )
 
-    # In[13]:
+    # with engine.connect() as conn:
+    #     conn.execute(create_q)
 
-    create_q = get_table_creation_query(
-        "address_nodes", cols, searchname, index_cols, unique_cols
-    )
-
-    # In[14]:
-
-    with engine.connect() as conn:
-        conn.execute(create_q)
-
-    # In[15]:
     logger.info("Saving outputs")
     with engine.connect() as conn:
         output.to_sql(

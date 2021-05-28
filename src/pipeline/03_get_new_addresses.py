@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-# coding: utf-8
-
+"""This module runs queries to merge new addresses into the database, and specify these to run processing on."""
 
 import logging
 
@@ -39,17 +37,9 @@ logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
 
-# ## Connect to Database
-
-# In[4]:
-
-
 user = os.getenv("POSTGRES_USER")
 password = os.getenv("POSTGRES_PASSWORD")
 host = os.getenv("POSTGRES_HOST")
-
-
-# In[5]:
 
 
 def main(_):
@@ -67,8 +57,6 @@ def main(_):
     create_q = get_table_creation_query(
         "unique_addresses", cols, searchname, index_cols, unique_cols
     )
-
-    # In[9]:
 
     with engine.connect() as conn:
         conn.execute(create_q)
@@ -89,38 +77,34 @@ def main(_):
 
     with engine.connect() as conn:
         conn.execute(q_merge_in_new)
+    # # ## Create Tables
+    # cols = {"address_id": "INTEGER"}
 
-    cols = {"address_id": "INTEGER"}
+    # unique_cols = ["address_id"]
 
-    unique_cols = ["address_id"]
+    # index_cols = ["address_id"]
 
-    index_cols = ["address_id"]
+    # create_q = get_table_creation_query(
+    #     "completed_addresses", cols, searchname, index_cols, unique_cols
+    # )
 
-    create_q = get_table_creation_query(
-        "completed_addresses", cols, searchname, index_cols, unique_cols
-    )
+    # with engine.connect() as conn:
+    #     conn.execute(create_q)
 
-    # In[14]:
+    # # ### Invalid table
 
-    with engine.connect() as conn:
-        conn.execute(create_q)
+    # # In[15]:
 
-    # ### Invalid table
+    # create_q = get_table_creation_query(
+    #     "invalid_addresses", cols, searchname, index_cols, unique_cols
+    # )
 
-    # In[15]:
+    # # In[16]:
 
-    create_q = get_table_creation_query(
-        "invalid_addresses", cols, searchname, index_cols, unique_cols
-    )
-
-    # In[16]:
-
-    with engine.connect() as conn:
-        conn.execute(create_q)
+    # with engine.connect() as conn:
+    #     conn.execute(create_q)
 
     # ## Create view for unprocessed addresses
-
-    # In[17]:
 
     q_view = f"""CREATE OR REPLACE VIEW {searchname}.address_ids_to_process AS
     SELECT u.id as address_id

@@ -1,13 +1,7 @@
-#!/usr/bin/env python
-# coding: utf-8
+"""This module converts new addresses to British National Grid (BNG) coordinates."""
 
-# # Convert coordinates to bng
-
-# In[1]:
-
-
-# In[2]:
-
+from absl import app
+from absl import flags
 
 import logging
 
@@ -26,9 +20,6 @@ from db_utils import get_engine, get_table_creation_query
 from gis_utils import convert_bng
 import os
 
-
-from absl import app
-from absl import flags
 
 FLAGS = flags.FLAGS
 
@@ -65,13 +56,9 @@ def main(_):
 
     # ## Define search parameters
 
-    # In[6]:
-
     searchname = FLAGS.searchname
 
     # ## Load data
-
-    # In[7]:
 
     q_load = f"""SELECT g.* FROM 
     {searchname}.geocoded_addresses g
@@ -79,48 +66,34 @@ def main(_):
     {searchname}.address_ids_to_process a
     ON g.address_id=a.address_id"""
 
-    # In[8]:
-
     with engine.connect() as conn:
         df = pd.read_sql(q_load, con=conn)
-
-    # In[9]:
 
     logger.info(f"Loaded {len(df)} addresses to convert")
 
     # ## Perform Conversion
 
-    # In[10]:
-
     gdf_bng = convert_bng(df)
 
     # ## Create table
 
-    # In[11]:
+    # cols = {
+    #     "eastings": "DECIMAL(14,6)",
+    #     "northings": "DECIMAL(14,6)",
+    #     "address_id": "INTEGER",
+    # }
 
-    cols = {
-        "eastings": "DECIMAL(14,6)",
-        "northings": "DECIMAL(14,6)",
-        "address_id": "INTEGER",
-    }
+    # index_cols = ["address_id"]
+    # unique_cols = ["address_id"]
 
-    index_cols = ["address_id"]
-    unique_cols = ["address_id"]
+    # create_q = get_table_creation_query(
+    #     "bng_coords", cols, searchname, index_cols, unique_cols
+    # )
 
-    # In[12]:
-
-    create_q = get_table_creation_query(
-        "bng_coords", cols, searchname, index_cols, unique_cols
-    )
-
-    # In[13]:
-
-    with engine.connect() as conn:
-        conn.execute(create_q)
+    # with engine.connect() as conn:
+    #     conn.execute(create_q)
 
     # ## Save results
-
-    # In[14]:
 
     with engine.connect() as conn:
         gdf_bng[["address_id", "eastings", "northings"]].to_sql(

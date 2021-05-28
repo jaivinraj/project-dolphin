@@ -1,10 +1,4 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# ## Get Closest POIs
-
-
-# In[2]:
+"""This module gets the closest POIs in each category to each property, based on Euclidean distance."""
 
 
 import logging
@@ -13,11 +7,9 @@ import sys
 
 sys.path.append("/app")
 
-# import scraping as sc
 
 import pandas as pd
 
-from jinja2 import Template
 
 from db_utils import get_engine, get_table_creation_query
 
@@ -78,21 +70,15 @@ def main(_):
 
     # ## Define search parameters
 
-    # In[7]:
-
     searchname = FLAGS.searchname
 
     # ## Load data
-
-    # In[8]:
 
     q_load = f"""SELECT g.* FROM 
     {searchname}.geocoded_addresses g
     INNER JOIN
     {searchname}.address_ids_to_process a
     ON g.address_id=a.address_id"""
-
-    # In[9]:
 
     with engine.connect() as conn:
         df = pd.read_sql(q_load, con=conn)
@@ -105,21 +91,15 @@ def main(_):
 
     # ### POIs
 
-    # In[11]:
-
     pois = loader.load_poi_gdfs(user=user, password=password, host=host)
 
     # ### Addresses
-
-    # In[12]:
 
     q_addresses = f"""SELECT c.* FROM 
     {searchname}.bng_coords c
     INNER JOIN
     {searchname}.address_ids_to_process a
     ON c.address_id=a.address_id"""
-
-    # In[13]:
 
     df_addresses = loader.load_sql(q_addresses, user=user, password=password, host=host)
 
@@ -131,16 +111,12 @@ def main(_):
     )
     # ## Get coordinates of POIs
 
-    # In[14]:
-
     is_point = {
         category: np.all(pois[category].geometry.geom_type == "Point")
         for category in pois
     }
     point_cats = [i for i in is_point if is_point[i]]
     logger.info("Calculating for point pois:" + ",".join(point_cats))
-
-    # In[15]:
 
     coords = {
         category: get_gdf_coords(pois[category])
@@ -150,16 +126,12 @@ def main(_):
 
     # ## Get closest POIs for point-based POIs
 
-    # In[16]:
-
     closest_idxs = {
         category: get_closest_idxs(
             df_addresses[["eastings", "northings"]].values, coords[category]
         )
         for category in coords
     }
-
-    # In[17]:
 
     closest_ids = {
         category: pois[category].id.values[closest_idxs[category]]
@@ -170,29 +142,16 @@ def main(_):
     logger.info("Calculating for polygon pois:" + ",".join(poly_cats))
     # ## Get closest POIs for polygon-based POIs
 
-    # In[18]:
-
-    # In[19]:
-
     polygons = {
         category: pois[category].set_index("id").geometry
         for category in pois
         if not is_point[category]
     }
 
-    # In[20]:
-
-    # In[21]:
-
     gdf_addresses = gpd.GeoDataFrame(
         df_addresses,
         geometry=gpd.points_from_xy(df_addresses.eastings, df_addresses.northings),
     )
-
-    # test_point = gdf_addresses.geometry[1]test_polygon = polygons["park"][polygons["park"].area > 1000_000].iloc[0]p1, p2 = nearest_points(test_polygon, test_point)test_gser = gpd.GeoSeries([test_point, test_polygon])results_gser = gpd.GeoSeries([p1])import matplotlib.pyplot as pltfig, ax = plt.subplots(figsize=(16, 9))
-    # test_gser.plot(ax=ax)
-    # results_gser.plot(ax=ax, color="red")gdf_addressespois["park"].plot()polygons
-    # In[22]:
 
     closest_ids_poly = {
         category: get_closest_pois_slow(
@@ -200,8 +159,6 @@ def main(_):
         )[0]
         for category in polygons
     }
-
-    # In[23]:
 
     closest_points_poly = {
         category: gpd.GeoSeries(
@@ -218,8 +175,6 @@ def main(_):
 
     # ## Create Outputs
 
-    # In[24]:
-
     output_dfs_points = {
         category: pd.DataFrame(
             {
@@ -232,8 +187,6 @@ def main(_):
         )
         for category in closest_ids
     }
-
-    # In[25]:
 
     output_dfs_polys = {
         category: pd.DataFrame(
@@ -250,26 +203,22 @@ def main(_):
 
     # ## Create table
 
-    # In[26]:
+    # cols = {
+    #     "eastings": "DECIMAL(14,6)",
+    #     "northings": "DECIMAL(14,6)",
+    #     "poi_id": "INTEGER",
+    #     "address_id": "INTEGER",
+    #     "poi_category": "VARCHAR(64)",
+    # }
 
-    cols = {
-        "eastings": "DECIMAL(14,6)",
-        "northings": "DECIMAL(14,6)",
-        "poi_id": "INTEGER",
-        "address_id": "INTEGER",
-        "poi_category": "VARCHAR(64)",
-    }
+    # index_cols = ["poi_id", "address_id", "poi_category"]
+    # unique_cols = []
 
-    index_cols = ["poi_id", "address_id", "poi_category"]
-    unique_cols = []
-
-    # In[27]:
-
-    create_q = get_table_creation_query(
-        "closest_pois", cols, searchname, index_cols, unique_cols
-    )
-
-    # In[28]:
+    # create_q = get_table_creation_query(
+    #     "closest_pois", cols, searchname, index_cols, unique_cols
+    # )
+    # with engine.connect() as conn:
+    #     conn.execute(create_q)
 
     q_unique = f"""CREATE UNIQUE INDEX IF NOT EXISTS address_poi_category_closest_pois_categoryx
             ON {searchname}.closest_pois (poi_category,address_id);
@@ -279,24 +228,18 @@ def main(_):
             ADD CONSTRAINT unique_address_poi_category_closest_pois
             UNIQUE USING INDEX address_poi_category_closest_pois_categoryx;"""
 
-    # In[29]:
-
     with engine.connect() as conn:
-        conn.execute(create_q)
         conn.execute(q_unique)
 
     with engine.connect() as conn:
         conn.execute(f"DROP TABLE {searchname}.closest_pois")
-    # ## Create Outputs
 
-    # In[30]:
+    # ## Create Outputs
 
     output = pd.concat([output_dfs_points[i] for i in output_dfs_points])
     output = output.append(
         pd.concat([output_dfs_polys[i] for i in output_dfs_polys]), ignore_index=True
     )
-
-    # In[31]:
 
     with engine.connect() as conn:
         output.to_sql(

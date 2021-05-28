@@ -1,9 +1,7 @@
-#!/usr/bin/env python
-# coding: utf-8
+"""This module is used to scrape data from RightMove and save to the database."""
 
-# # Scrape Data from Rightmove
-
-
+from absl import app
+from absl import flags
 import logging
 
 import sys
@@ -11,11 +9,6 @@ import sys
 sys.path.append("/app")
 
 import scraping as sc
-
-import pandas as pd
-
-from jinja2 import Template
-
 import os
 
 from db_utils import get_engine, get_table_creation_query
@@ -38,9 +31,6 @@ user = os.getenv("POSTGRES_USER")
 password = os.getenv("POSTGRES_PASSWORD")
 host = os.getenv("POSTGRES_HOST")
 
-
-from absl import app
-from absl import flags
 
 FLAGS = flags.FLAGS
 

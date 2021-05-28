@@ -1,20 +1,22 @@
+"""01_create_tables
+
+This module creates tables in the database to be populated by later processing stages.
+"""
+
+from absl import app
+from absl import flags
+
 import logging
 
 import sys
 
+import os
+
 sys.path.append("/app")
 
 
-import pandas as pd
-
-from jinja2 import Template
-
-import os
-
 from db_utils import get_engine, get_table_creation_query
 
-from absl import app
-from absl import flags
 
 FLAGS = flags.FLAGS
 
@@ -29,16 +31,11 @@ logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
 
-# ## Connect to Database
-
-# In[4]:
-
-
 user = os.getenv("POSTGRES_USER")
 password = os.getenv("POSTGRES_PASSWORD")
 host = os.getenv("POSTGRES_HOST")
 
-
+# specify specs of each table
 TABLE_SPECS = {
     "raw_data": {
         "coldict": {

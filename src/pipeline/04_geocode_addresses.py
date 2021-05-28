@@ -1,6 +1,7 @@
-#!/usr/bin/env python
-# coding: utf-8
+"""This module geocodes addresses into lat/long coordinates"""
 
+from absl import app
+from absl import flags
 
 import logging
 
@@ -8,22 +9,14 @@ import sys
 
 sys.path.append("/app")
 
-# import scraping as sc
-
-import pandas as pd
-
-from jinja2 import Template
-
 from db_utils import get_engine, get_table_creation_query
 
 import geocoding as gc
 import os
 
 
-# In[3]:
+import pandas as pd
 
-from absl import app
-from absl import flags
 
 FLAGS = flags.FLAGS
 
@@ -38,11 +31,6 @@ logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
 
-# ## Connect to Database
-
-# In[4]:
-
-
 user = os.getenv("POSTGRES_USER")
 password = os.getenv("POSTGRES_PASSWORD")
 host = os.getenv("POSTGRES_HOST")
@@ -54,13 +42,9 @@ def main(_):
 
     # ## Define search parameters
 
-    # In[6]:
-
     searchname = FLAGS.searchname
 
     # ## Create View for Addresses to Process
-
-    # In[7]:
 
     q_view = f"""CREATE OR REPLACE VIEW {searchname}.addresses_to_process AS
     SELECT u.id,u.address
@@ -70,58 +54,40 @@ def main(_):
     on a.address_id=u.id
     """
 
-    # In[8]:
-
     with engine.connect() as conn:
         conn.execute(q_view)
 
     # ## Load data
 
-    # In[9]:
-
     with engine.connect() as conn:
         df = pd.read_sql(f"SELECT * FROM {searchname}.addresses_to_process", con=conn)
 
-    # In[10]:
-
     logger.info(f"Loaded {len(df)} addresses to geocode")
 
-    # In[11]:
-
     df_results = gc.query_addresses(df)
-
-    # In[12]:
 
     logger.info(f"Geocoded {len(df_results)} addresses")
 
     # ## Create geocoded table
 
-    # In[13]:
+    # cols = {
+    #     "latitude": "DECIMAL(10,6)",
+    #     "longitude": "DECIMAL(10,6)",
+    #     "address_id": "INTEGER",
+    #     "geocoded_address": "VARCHAR(256)",
+    # }
 
-    cols = {
-        "latitude": "DECIMAL(10,6)",
-        "longitude": "DECIMAL(10,6)",
-        "address_id": "INTEGER",
-        "geocoded_address": "VARCHAR(256)",
-    }
+    # index_cols = ["address_id"]
+    # unique_cols = ["address_id"]
 
-    index_cols = ["address_id"]
-    unique_cols = ["address_id"]
+    # create_q = get_table_creation_query(
+    #     "geocoded_addresses", cols, searchname, index_cols, unique_cols
+    # )
 
-    # In[14]:
-
-    create_q = get_table_creation_query(
-        "geocoded_addresses", cols, searchname, index_cols, unique_cols
-    )
-
-    # In[15]:
-
-    with engine.connect() as conn:
-        conn.execute(create_q)
+    # with engine.connect() as conn:
+    #     conn.execute(create_q)
 
     # ## Add to table
-
-    # In[16]:
 
     with engine.connect() as conn:
         df_results[["id", "address", "latitude", "longitude"]].rename(
@@ -136,8 +102,6 @@ def main(_):
 
     # ## Note invalid addresses
 
-    # In[17]:
-
     q_add_invalid = f"""INSERT INTO {searchname}.invalid_addresses (address_id)
     SELECT a.address_id
     FROM   {searchname}.address_ids_to_process a
@@ -147,8 +111,6 @@ def main(_):
     WHERE  g.address_id = a.address_id
     );
     """
-
-    # In[18]:
 
     with engine.connect() as conn:
         conn.execute(q_add_invalid)
