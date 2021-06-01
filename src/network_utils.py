@@ -18,7 +18,7 @@ def attempt_load_roadnet():
         ) as f:
             walknet = pickle.load(f)
             logger.info("Loaded network")
-    except EOFError as e:
+    except Exception as e:
         logger.warning("unable to load from pickle. Loading from graphml")
         walknet = ox.load_graphml(
             os.path.join(DATA_PATH, "roadnet_greaterlondon_walking.graphml")
