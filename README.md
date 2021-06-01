@@ -21,6 +21,20 @@ Following this, the containers can be built using:
 docker-compose up -d
 ```
 
+
+To fetch POIs and road network, run (ideally in the container `dolphin-server` - you can get into the container using `docker exec -it dolpin-server /bin/bash`):
+1. [STATIC-01.0-query-osmnx.ipynb](notebooks/STATIC-01.0-query-osmnx.ipynb)
+2. [STATIC-02-save-roadnet-coords.ipynb](notebooks/STATIC-02.0-save-roadnet-coords.ipynb)
+3. [STATIC-03.0-snap-pois-roadnet.ipynb](notebooks/STATIC-03.0-snap-pois-roadnet.ipynb)
+
+To run the full processing (currently with a standard search), run:
+
+```bash
+sh run_processing.sh -s <yoursearchname>
+```
+
+
+
 ## 2. Refactoring 🏗️
 
 NOTE: this repo is a refactored version of a faster (but less robust) initial implementation. Some of the functionality from the old repo has not yet been incorporated.
@@ -38,6 +52,8 @@ This repo carries out the following on each update:
 2. Cross-reference against currently processed properties to minimise computation
 3. Geocode properties
 4. Convert to bng coordinates for measurements in metres
+5. Finds closest of each type of point of interest (POI) eg. tube stations, parks
+6. Finds distances to these POIs along the road network
 
 ### 3.2. Still to be refactored from previous version
 
