@@ -67,6 +67,7 @@ This repo carries out the following on each update:
   * Number of bathrooms
   * Furnished vs. unfurnished
   * Broadband speed
+* Schedule processing with airflow
 
 
 </details>
